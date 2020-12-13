@@ -1,0 +1,82 @@
+digraph Algorithm {
+    node [shape=Mrecord, style=filled, fillcolor=white]
+
+    subgraph cluster_Inputs {
+        label="Inputs"
+        style="dashed"
+
+        Target [label="{Target|FQDN\nname}"]
+        Hint   [label="{Hint|ADDR\nserver}"]
+    }
+
+    Domain  [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
+    Auth    [label="{Auth|ADDR ⨉ FQDN\nserver, name}"]
+    SOA_tx  [label="{SOA/TX|ADDR ⨉ FQDN\nserver, qname}"]
+    SOA_rx  [label="{SOA/RX|ADDR ⨉ FQDN\nserver, qname}"]
+    Oob     [label="{Oob|FQDN ⨉ FQDN\nqname, nsdname}"]
+    A_tx    [label="{A/TX|ADDR ⨉ FQDN\nserver, qname}"]
+    A_rx    [label="{A/RX|ADDR ⨉ FQDN\nserver, qname}"]
+    AAAA_tx [label="{AAAA/TX|ADDR ⨉ FQDN\nserver, qname}"]
+    AAAA_rx [label="{AAAA/RX|ADDR ⨉ FQDN\nserver, qname}"]
+    Addr    [label="{Addr|FQDN ⨉ ADDR\nqname, address}"]
+
+
+    node [shape=record]
+
+    Target -> t1 [label="d"]
+    Hint -> t1 [label="s"]
+    t1 [label=<t<SUB>1</SUB>: p=parent(d), n=".">]
+    t1 -> Domain [label="(d, p)"]
+    t1 -> Auth [label="(s, n)"]
+
+    Domain -> t2 [label="(_, c)", dir=both]
+    t2 [label=<t<SUB>2</SUB>: p=parent(c)>]
+    t2 -> Domain [label="(c, p)"]
+
+    Domain -> t3 [label="(c, p)", dir=both]
+    Auth -> t3 [label="(s, n)", dir=both]
+    t3 [label=<t<SUB>3</SUB>: p=n>]
+    t3 -> SOA_tx [label="(s, c)"]
+
+    SOA_tx -> t4 [label="(s, q)"]
+    t4 [label=<t<SUB>4</SUB>: send(s, q, "SOA")>]
+    t4 -> SOA_rx [label="(s, q)"]
+
+    SOA_rx -> t5 [label="(s, q)"]
+    t5 [label=<t<SUB>5</SUB>: (b, A, G, O) = receive(s, q, "SOA")>]
+    t5 -> Auth [label="if |A| > 0: {(s, q)}\lelse: ∅\l"]
+    t5 -> Auth [label="if b: {(s, q)}\lelse: ∅\l"]
+    t5 -> Auth [label="\{(a, q) \| a ∈ G\}"]
+    t5 -> Oob [label="\{(q, n) \| n ∈ O\}"]
+
+    Oob -> t6 [label="(_, n)", dir=both]
+    t6 [label=<t<SUB>6</SUB>: p=parent(n)>]
+    t6 -> Domain [label="(n, p)"]
+
+    Oob -> t7 [label="(_, n)", dir=both]
+    Auth -> t7 [label="(s, q)", dir=both]
+    t7 [label=<t<SUB>7</SUB>: n=q>]
+    t7 -> AAAA_tx [label="(s, q)"]
+    t7 -> A_tx [label="(s, q)"]
+
+    AAAA_tx -> t8 [label="(s, q)"]
+    t8 [label=<t<SUB>8</SUB>: send(s, q, "AAAA")>]
+    t8 -> AAAA_rx [label="\{(q, a) \| a x ∈ A\}"]
+
+    A_tx -> t9 [label="(s, q)"]
+    t9 [label=<t<SUB>9</SUB>: send(s, q, "A")>]
+    t9 -> A_rx [label="\{(q, a) \| a x ∈ A\}"]
+
+    AAAA_rx -> t10 [label="(s, q)"]
+    t10 [label=<t<SUB>10</SUB>: (_, A, _, _) = receive(s, q, "AAAA")>]
+    t10 -> Addr [label="\{(q, a) \| a x ∈ A\}"]
+
+    A_rx -> t11 [label="(s, q)"]
+    t11 [label=<t<SUB>11</SUB>: (_, A, _, _) = receive(s, q, "A")>]
+    t11 -> Addr [label="\{(q, a) \| a x ∈ A\}"]
+
+    Addr -> t12 [label="(q, a)", dir=both]
+    Oob -> t12 [label="(d, n)", dir=both]
+    t12 [label=<t<SUB>12</SUB>: q=n>]
+    t12 -> Auth [label="(a, d)"]
+} 
