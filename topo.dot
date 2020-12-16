@@ -1,4 +1,5 @@
 digraph Algorithm {
+    compound=true
     node [shape=Mrecord, style=filled, fillcolor=white]
 
     subgraph cluster_Inputs {
@@ -9,17 +10,42 @@ digraph Algorithm {
         Hint   [label="{Hint|ADDR\nserver}"]
     }
 
-    Domain  [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
-    Auth    [label="{Auth|ADDR ⨉ FQDN\nserver, name}"]
-    SOA_tx  [label="{SOA/TX|ADDR ⨉ FQDN\nserver, qname}"]
-    SOA_rx  [label="{SOA/RX|ADDR ⨉ FQDN\nserver, qname}"]
-    Oob     [label="{Oob|FQDN ⨉ FQDN\nqname, nsdname}"]
-    A_tx    [label="{A/TX|ADDR ⨉ FQDN\nserver, qname}"]
-    A_rx    [label="{A/RX|ADDR ⨉ FQDN\nserver, qname}"]
-    AAAA_tx [label="{AAAA/TX|ADDR ⨉ FQDN\nserver, qname}"]
-    AAAA_rx [label="{AAAA/RX|ADDR ⨉ FQDN\nserver, qname}"]
-    Addr    [label="{Addr|FQDN ⨉ ADDR\nqname, address}"]
+    subgraph Down {
+        Down_send   [label="{Down/SOA|ADDR ⨉ FQDN\nserver, qname}"]
+        Down_nodata [label="{Down/Nodata|ADDR ⨉ FQDN\nserver, qname}"]
+        Down_answer [label="{Down/Ans|ADDR ⨉ FQDN\nserver, qname}"]
+        Down_glue   [label="{Down/RefGlue|FQDN ⨉ ADDR\nqname, nsaddr}"]
+        Down_oob    [label="{Down/RefOob|FQDN ⨉ FQDN\nqname, nsname}"]
+        Down_send -> Down_nodata [label="0..1", style=dotted]
+        Down_send -> Down_answer [label="0..1", style=dotted]
+        Down_send -> Down_glue [label="0..", style=dotted]
+        Down_send -> Down_oob [label="0..", style=dotted]
+    }
 
+    subgraph Siblings {
+        Siblings_send [label="{Siblings/NS|ADDR ⨉ FQDN\nserver, qname}"]
+        Siblings_glue [label="{Siblings/AnsGlue|FQDN ⨉ ADDR\nqname, nsaddr}"]
+        Siblings_oob  [label="{Siblings/AnsOob|FQDN ⨉ FQDN\nqname, nsname}"]
+        Siblings_send -> Siblings_glue [label="0..", style=dotted]
+        Siblings_send -> Siblings_oob [label="0..", style=dotted]
+    }
+
+    subgraph Lookup4 {
+        Lookup4_send   [label="{Lookup4/A|ADDR ⨉ FQDN\nserver, qname}"]
+        Lookup4_answer [label="{Lookup4/Ans|FQDN ⨉ ADDR\nqname, address}"]
+        Lookup4_send -> Lookup4_answer [label="0..", style=dotted]
+    }
+
+    subgraph Lookup6 {
+        Lookup6_send   [label="{Lookup6/AAAA|ADDR ⨉ FQDN\nserver, qname}"]
+        Lookup6_answer [label="{Lookup6/Ans|FQDN ⨉ ADDR\nqname, address}"]
+        Lookup6_send -> Lookup6_answer [label="0..", style=dotted]
+    }
+
+    Domain       [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
+    Auth         [label="{Auth|ADDR ⨉ FQDN\nserver, name}"]
+    Oob          [label="{Oob|FQDN ⨉ FQDN\nqname, nsdname}"]
+    Addr         [label="{Addr|FQDN ⨉ ADDR\nqname, address}"]
 
     node [shape=record]
 
@@ -36,18 +62,23 @@ digraph Algorithm {
     Domain -> t3 [label="(c, p)", dir=both]
     Auth -> t3 [label="(s, n)", dir=both]
     t3 [label=<t<SUB>3</SUB>: p=n>]
-    t3 -> SOA_tx [label="(s, c)"]
+    t3 -> Down_send [label="(s, c)"]
 
-    SOA_tx -> t4 [label="(s, q)"]
-    t4 [label=<t<SUB>4</SUB>: send(s, q, "SOA")>]
-    t4 -> SOA_rx [label="(s, q)"]
+    Down_nodata -> t4 [label="(s, q)"]
+    t4 [label=< t<SUB>4</SUB> >]
+    t4 -> Auth [label="(s, q)"]
 
-    SOA_rx -> t5 [label="(s, q)"]
-    t5 [label=<t<SUB>5</SUB>: (b, A, G, O) = receive(s, q, "SOA")>]
-    t5 -> Auth [label="if |A| > 0: {(s, q)}\lelse: ∅\l"]
-    t5 -> Auth [label="if b: {(s, q)}\lelse: ∅\l"]
-    t5 -> Auth [label="\{(a, q) \| a ∈ G\}"]
-    t5 -> Oob [label="\{(q, n) \| n ∈ O\}"]
+    Down_answer -> t5 [label="(s, q)"]
+    t5 [label=< t<SUB>5</SUB> >]
+    t5 -> Auth [label="(s, q)"]
+
+    Down_glue -> t13 [label="(q, a)"]
+    t13 [label=< t<SUB>13</SUB> >]
+    t13 -> Auth [label="(a, q)"]
+
+    Down_oob -> t14 [label="(q, a)"]
+    t14 [label=< t<SUB>14</SUB> >]
+    t14 -> Oob [label="(a, q)"]
 
     Oob -> t6 [label="(_, n)", dir=both]
     t6 [label=<t<SUB>6</SUB>: p=parent(n)>]
@@ -56,27 +87,31 @@ digraph Algorithm {
     Oob -> t7 [label="(_, n)", dir=both]
     Auth -> t7 [label="(s, q)", dir=both]
     t7 [label=<t<SUB>7</SUB>: n=q>]
-    t7 -> AAAA_tx [label="(s, q)"]
-    t7 -> A_tx [label="(s, q)"]
+    t7 -> Lookup6_send [label="(s, q)"]
+    t7 -> Lookup4_send [label="(s, q)"]
 
-    AAAA_tx -> t8 [label="(s, q)"]
-    t8 [label=<t<SUB>8</SUB>: send(s, q, "AAAA")>]
-    t8 -> AAAA_rx [label="\{(q, a) \| a x ∈ A\}"]
+    Lookup4_answer -> t8 [label="(q, a)"]
+    t8 [label=< t<SUB>8</SUB> >]
+    t8 -> Addr [label="(q, a)"]
 
-    A_tx -> t9 [label="(s, q)"]
-    t9 [label=<t<SUB>9</SUB>: send(s, q, "A")>]
-    t9 -> A_rx [label="\{(q, a) \| a x ∈ A\}"]
-
-    AAAA_rx -> t10 [label="(s, q)"]
-    t10 [label=<t<SUB>10</SUB>: (_, A, _, _) = receive(s, q, "AAAA")>]
-    t10 -> Addr [label="\{(q, a) \| a x ∈ A\}"]
-
-    A_rx -> t11 [label="(s, q)"]
-    t11 [label=<t<SUB>11</SUB>: (_, A, _, _) = receive(s, q, "A")>]
-    t11 -> Addr [label="\{(q, a) \| a x ∈ A\}"]
+    Lookup6_answer -> t11 [label="(q, a)"]
+    t11 [label=< t<SUB>11</SUB> >]
+    t11 -> Addr [label="(q, a)"]
 
     Addr -> t12 [label="(q, a)", dir=both]
     Oob -> t12 [label="(d, n)", dir=both]
     t12 [label=<t<SUB>12</SUB>: q=n>]
     t12 -> Auth [label="(a, d)"]
+
+    Auth -> t15 [label="(s, n)", dir=both]
+    t15 [label=< t<SUB>15</SUB> >]
+    t15 -> Siblings_send [label="(s, n)"]
+
+    Siblings_glue -> t16 [label="(q, a)"]
+    t16 [label=<t<SUB>16</SUB>: p=n>]
+    t16 -> Auth [label="(q, a)"]
+
+    Siblings_oob -> t17 [label="(q, n)"]
+    t17 [label=<t<SUB>17</SUB>: p=n>]
+    t17 -> Oob [label="(q, n)"]
 } 
