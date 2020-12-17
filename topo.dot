@@ -1,6 +1,7 @@
 digraph Algorithm {
     compound=true
     node [shape=Mrecord, style=filled, fillcolor=white]
+    edge [arrowtail=empty]
 
     subgraph cluster_Inputs {
         label="Inputs"
@@ -14,20 +15,26 @@ digraph Algorithm {
         Down_send   [label="{Down/SOA|ADDR ⨉ FQDN\nserver, qname}"]
         Down_nodata [label="{Down/Nodata|ADDR ⨉ FQDN\nserver, qname}"]
         Down_answer [label="{Down/Ans|ADDR ⨉ FQDN\nserver, qname}"]
-        Down_glue   [label="{Down/RefGlue|FQDN ⨉ ADDR\nqname, nsaddr}"]
-        Down_oob    [label="{Down/RefOob|FQDN ⨉ FQDN\nqname, nsname}"]
+        Down_glue   [label="{Down/RefGlue|FQDN ⨉ ADDR\nqname, glue}"]
+        Down_ref    [label="{Down/Ref|FQDN ⨉ FQDN\nqname, nsdname}"]
         Down_send -> Down_nodata [label="0..1", style=dotted]
         Down_send -> Down_answer [label="0..1", style=dotted]
         Down_send -> Down_glue [label="0..", style=dotted]
-        Down_send -> Down_oob [label="0..", style=dotted]
+        Down_send -> Down_ref [label="0..", style=dotted]
     }
 
     subgraph Siblings {
         Siblings_send [label="{Siblings/NS|ADDR ⨉ FQDN\nserver, qname}"]
-        Siblings_glue [label="{Siblings/AnsGlue|FQDN ⨉ ADDR\nqname, nsaddr}"]
-        Siblings_oob  [label="{Siblings/AnsOob|FQDN ⨉ FQDN\nqname, nsname}"]
+        Siblings_glue [label="{Siblings/AnsGlue|FQDN ⨉ ADDR\nqname, glue}"]
+        Siblings_ans  [label="{Siblings/Ans|FQDN ⨉ FQDN\nqname, nsdname}"]
         Siblings_send -> Siblings_glue [label="0..", style=dotted]
-        Siblings_send -> Siblings_oob [label="0..", style=dotted]
+        Siblings_send -> Siblings_ans [label="0..", style=dotted]
+    }
+
+    subgraph Self {
+        Self_send   [label="{Self/SOA|ADDR ⨉ FQDN\nserver, qname}"]
+        Self_answer [label="{Self/Ans|ADDR ⨉ FQDN\nserver, qname}"]
+        Self_send -> Self_answer [label="0..1", style=dotted]
     }
 
     subgraph Lookup4 {
@@ -42,18 +49,21 @@ digraph Algorithm {
         Lookup6_send -> Lookup6_answer [label="0..", style=dotted]
     }
 
-    Domain       [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
-    Auth         [label="{Auth|ADDR ⨉ FQDN\nserver, name}"]
-    Oob          [label="{Oob|FQDN ⨉ FQDN\nqname, nsdname}"]
-    Addr         [label="{Addr|FQDN ⨉ ADDR\nqname, address}"]
+    Domain [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
+    Auth   [label="{Auth|ADDR ⨉ FQDN\nserver, name}"]
+    Zone   [label="{Zone|ADDR ⨉ FQDN\nserver, name}"]
+    Oob    [label="{Oob|FQDN ⨉ FQDN\nqname, nsdname}"]
+    Addr   [label="{Addr|FQDN ⨉ ADDR\nqname, address}"]
 
     node [shape=record]
 
     Target -> t1 [label="d"]
-    Hint -> t1 [label="s"]
-    t1 [label=<t<SUB>1</SUB>: p=parent(d), n=".">]
+    t1 [label=< t<SUB>1</SUB>: p=parent(d) >]
     t1 -> Domain [label="(d, p)"]
-    t1 -> Auth [label="(s, n)"]
+
+    Hint -> t20 [label="s"]
+    t20 [label=< t<SUB>20</SUB>: n="." >]
+    t20 -> Auth [label="(s, n)"]
 
     Domain -> t2 [label="(_, c)", dir=both]
     t2 [label=<t<SUB>2</SUB>: p=parent(c)>]
@@ -71,12 +81,13 @@ digraph Algorithm {
     Down_answer -> t5 [label="(s, q)"]
     t5 [label=< t<SUB>5</SUB> >]
     t5 -> Auth [label="(s, q)"]
+    t5 -> Zone [label="(s, q)"]
 
     Down_glue -> t13 [label="(q, a)"]
     t13 [label=< t<SUB>13</SUB> >]
     t13 -> Auth [label="(a, q)"]
 
-    Down_oob -> t14 [label="(q, a)"]
+    Down_ref -> t14 [label="(q, a)"]
     t14 [label=< t<SUB>14</SUB> >]
     t14 -> Oob [label="(a, q)"]
 
@@ -103,15 +114,23 @@ digraph Algorithm {
     t12 [label=<t<SUB>12</SUB>: q=n>]
     t12 -> Auth [label="(a, d)"]
 
+    Auth -> t18 [label="(s, n)", dir=both]
+    t18 [label=< t<SUB>18</SUB> >]
+    t18 -> Self_send [label="(s, n)"]
+
+    Self_answer -> t19 [label="(s, q)"]
+    t19 [label=< t<SUB>19</SUB> >]
+    t19 -> Zone [label="(s, q)"]
+
     Auth -> t15 [label="(s, n)", dir=both]
     t15 [label=< t<SUB>15</SUB> >]
     t15 -> Siblings_send [label="(s, n)"]
 
     Siblings_glue -> t16 [label="(q, a)"]
-    t16 [label=<t<SUB>16</SUB>: p=n>]
+    t16 [label=< t<SUB>16</SUB> >]
     t16 -> Auth [label="(q, a)"]
 
-    Siblings_oob -> t17 [label="(q, n)"]
-    t17 [label=<t<SUB>17</SUB>: p=n>]
+    Siblings_ans -> t17 [label="(q, n)"]
+    t17 [label=< t<SUB>17</SUB> >]
     t17 -> Oob [label="(q, n)"]
 } 

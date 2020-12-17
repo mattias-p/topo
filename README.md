@@ -1,5 +1,99 @@
 # Topo
 
+## Notation
+
+This algorithm is defined in terms of a [Coloured Petri net] (CPN) with a few
+modifications to its rules.
+1. When a variable is used in a single place and never referred to, its name is
+   replaced with a placeholder underscore.
+
+2. For double ended arrows, the arrow head pointing to a place is depicted as
+   empty.
+   This is meant to let the reader know which arrows coming into a place are
+   double ended and which ones are not.
+   Even when the arrows themselves are very long.
+
+3. The guard expression of a transition may use a function named parent.
+   The `parent(FQDN: domain) → FQDN` function returns a copy of `domain` with
+   its least significant label removed. If `domain` contains no labels, an
+   identical FQDN is returned.
+
+4. In addition to the usual kind of places there is also "request places" and
+   "response places".
+
+   When a token is created in a "request place", a DNS request is sent to the
+   specified by the token.
+   The token also specifies the qname.
+   The qtype is taken from the name of the place.
+
+   When a response is received it is interpreted according to a set of
+   patterns.
+   Each time a pattern is matched, a token is created in the associated
+   response place, given that such a place exists.
+   The following patterns are defined:
+    1. Nodata
+       Criterion: A token is created in this place if the response has the
+       NODATA pseudo RCODE.
+    2. Ans
+       Criterion: A token is created in this place for each authoritative answer
+       record for the qname of the qtype.
+    3. AnsGlue
+       Precondition: A place of this kind must only be attached to request
+       places whose qname is NS.
+       Criterion: A token is created in this place for each A record and each
+       AAAA record in the additional section whose owner name matches the
+       NSDNAME of an authoritative NS answer for the qname of the qtype.
+    4. Ref
+       Criterion: A token is created in this place for each NS record in the
+       authority section.
+    5. RefGlue
+       Criterion: A token is created in this place for each A record and each
+       AAAA record in the additional section whose owner name matches the
+       NSDNAME of an NS record in the authority section.
+
+   The color set of a request place must be ADDR ⨉ FQDN: server, qname.
+   The exact color set of a response place is defined by the place itself, but
+   it must be a tuple consisting of the following elements:
+    1. ADDR: server - the IP address of the server the request was sent to.
+    2. FQDN: qname - the QNAME used in the request.
+    3. ADDR: glue - the ADDRESS of the A or AAAA record. Only valid for AnsGlue
+       and RefGlue response places.
+    4. FQDN: nsdname - the NSDNAME of the NS record. Only valid for Ref and
+       RefGlue response places, as well as Ans and AnsGlue response places
+       provided that the qtype is NS.
+    5. ADDR: address - the ADDRESS of the A or AAAA answer. Only valid for
+       Ans and AnsGlue response places provided that the qtype is A or AAAA.
+
+   The associations between request places and response places are depicted
+   with dotted arrows.
+
+   A label may be attached to the dotted arrow indicating the number of tokens
+   that may be created in the response place as a result of a single request.
+   The minimum number is always zero.
+   The maxmimum number is either 1 or positive infinity depending on the kind
+   and color set of the response place.
+   If the label is not present the maximum can still be inferred, but adding
+   the label is helpful to the reader.
+
+5. Unlike in regular CPNs where places contain multisets of tokens, these places
+   contain sets of tokens.
+
+6. For each qtype specified by at least one request place, there is a tracker
+   that keeps track of all tokens that have been created in request places with
+   that qtype.
+
+7. A transition can only fire if it would create at least one token in a place
+   where an identical token hasn't been before.
+
+8. A transition can only fire if it would not create a token in a request place 
+   that would be recognized by the tracker of that place.
+
+9. Execution continues with enabled transitions firing in any order until all
+   transitions are dead, causing the execution to terminate.
+
+Rules 5, 6, 7 and 8 are backwards compatible with [prioritised petri nets], 
+but by using these rules instead, we can keep the diagram more succinct.
+
 #### Inputs
 * A set of root hints.
 * A domain name.
@@ -13,41 +107,6 @@
 #### Procedure
 
 ![diagram](topo.png)
-
-This algorithm is defined in terms of a [Coloured Petri net] (CPN) with a few
-modifications to its rules.
-1. Unlike in regular CPNs where places track multisets of objects, these places
-   track sets of objects.
-2. A transition can only fire if it would send at least one object into a place
-   where it hasn't been seen before.
-3. Execution continues with live transitions firing in any order until all
-   transitions are dead, causing the execution to terminate.
-
-When a variable is used in a single place and never referred to, its name is
-replaced with a placeholder underscore.
-
-Three functions are available for use by the transitions.
-
-1. The `parent(domain: FQDN) → FQDN` function returns a copy of `domain` with
-   its least significant label removed. If `domain` contains no labels, an
-   identical FQDN is returned.
-
-2. The `send(server: ADDR, qname: FQDN, qtype: RRTYPE)` function sends a DNS
-   query for `qname` and `qtype` to `server`.
-
-3. The `receive(server: ADDR, qname: FQDN, qtype: RRTYPE) -> (bool, {RDATA},
-   {(ADDR)}, {(FQDN)})` returns the interpreted response received for a DNS
-   query for `qname` and `qtype` to `server`.
-   The elements of the returned tuple are as follows:
-   1. A boolean indicating whether response is NODATA.
-   2. A set of RDATA values, with one element per record in the answer section
-      that matches `qname` and `qtype`.
-      However if the AA flag is unset, this set is returned empty.
-      N.B. the exact type of the RDATA values depends on the value of `qtype`.
-   3. A set of name server addresses, with one element for each NS record in the
-      authority section that also comes with glue in the additional section.
-   4. A set of name server names, with one element for each NS record in the
-      authority section that is out-of-bailiwith for `qname`.
 
 The Target and Hint places are where the input objects are added before the
 starting the execution.
@@ -120,3 +179,4 @@ to Auth, which is all we needed to do.
   apex of a domain is always the domain itself.
 
 [Coloured Petri net]: https://en.wikipedia.org/wiki/Coloured_Petri_net
+[Prioritised Petri net]: https://en.wikipedia.org/wiki/Prioritised_Petri_net
