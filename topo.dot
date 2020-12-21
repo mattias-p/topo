@@ -1,5 +1,4 @@
 digraph Algorithm {
-    compound=true
     node [shape=Mrecord, style=filled, fillcolor=white]
     edge [arrowtail=empty]
 
@@ -11,49 +10,13 @@ digraph Algorithm {
         Hint   [label="{Hint|ADDR\nserver}"]
     }
 
-    subgraph Down {
-        Down_send   [label="{Down/SOA|ADDR ⨉ FQDN\nserver, qname}"]
-        Down_nodata [label="{Down/Nodata|ADDR ⨉ FQDN\nserver, qname}"]
-        Down_answer [label="{Down/Ans|ADDR ⨉ FQDN\nserver, qname}"]
-        Down_glue   [label="{Down/RefGlue|FQDN ⨉ ADDR\nqname, glue}"]
-        Down_ref    [label="{Down/Ref|FQDN ⨉ FQDN\nqname, nsdname}"]
-        Down_send -> Down_nodata [label="0..1", style=dotted]
-        Down_send -> Down_answer [label="0..1", style=dotted]
-        Down_send -> Down_glue [label="0..", style=dotted]
-        Down_send -> Down_ref [label="0..", style=dotted]
-    }
-
-    subgraph Siblings {
-        Siblings_send [label="{Siblings/NS|ADDR ⨉ FQDN\nserver, qname}"]
-        Siblings_glue [label="{Siblings/AnsGlue|FQDN ⨉ ADDR\nqname, glue}"]
-        Siblings_ans  [label="{Siblings/Ans|FQDN ⨉ FQDN\nqname, nsdname}"]
-        Siblings_send -> Siblings_glue [label="0..", style=dotted]
-        Siblings_send -> Siblings_ans [label="0..", style=dotted]
-    }
-
-    subgraph Self {
-        Self_send   [label="{Self/SOA|ADDR ⨉ FQDN\nserver, qname}"]
-        Self_answer [label="{Self/Ans|ADDR ⨉ FQDN\nserver, qname}"]
-        Self_send -> Self_answer [label="0..1", style=dotted]
-    }
-
-    subgraph Lookup4 {
-        Lookup4_send   [label="{Lookup4/A|ADDR ⨉ FQDN\nserver, qname}"]
-        Lookup4_answer [label="{Lookup4/Ans|FQDN ⨉ ADDR\nqname, address}"]
-        Lookup4_send -> Lookup4_answer [label="0..", style=dotted]
-    }
-
-    subgraph Lookup6 {
-        Lookup6_send   [label="{Lookup6/AAAA|ADDR ⨉ FQDN\nserver, qname}"]
-        Lookup6_answer [label="{Lookup6/Ans|FQDN ⨉ ADDR\nqname, address}"]
-        Lookup6_send -> Lookup6_answer [label="0..", style=dotted]
-    }
-
-    Domain [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
-    Auth   [label="{Auth|ADDR ⨉ FQDN\nserver, name}"]
-    Zone   [label="{Zone|ADDR ⨉ FQDN\nserver, name}"]
-    Oob    [label="{Oob|FQDN ⨉ FQDN\nqname, nsdname}"]
-    Addr   [label="{Addr|FQDN ⨉ ADDR\nqname, address}"]
+    Domain    [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
+    Authority [label="{Authority|ADDR ⨉ FQDN\nserver, name}"]
+    Down      [label="{Down|ADDR ⨉ FQDN\nserver, qname}"]
+    Referral  [label="{Referral|FQDN ⨉ FQDN\nqname, nsdname}"]
+    Lookup    [label="{Lookup|ADDR ⨉ FQDN\nserver, qname}"]
+    Address   [label="{Address|FQDN ⨉ ADDR\nqname, address}"]
+    Zone      [label="{Zone|ADDR ⨉ FQDN\nserver, name}"]
 
     node [shape=record]
 
@@ -63,74 +26,51 @@ digraph Algorithm {
 
     Hint -> T3 [label="s"]
     T3 [label=< T<SUB>3</SUB>: n="." >]
-    T3 -> Auth [label="(s, n)"]
+    T3 -> Authority [label="(s, n)"]
 
-    Domain -> T2 [label="(_, c)", dir=both]
+    Domain -> T2 [label="(q, c)", dir=both]
     T2 [label=< T<SUB>2</SUB>: p=parent(c) >]
     T2 -> Domain [label="(c, p)"]
 
     Domain -> T4 [label="(c, p)", dir=both]
-    Auth -> T4 [label="(s, n)", dir=both]
+    Authority -> T4 [label="(s, n)", dir=both]
     T4 [label=< T<SUB>4</SUB>: p=n >]
-    T4 -> Down_send [label="(s, c)"]
+    T4 -> Down [label="(s, c)"]
 
-    Down_nodata -> T7 [label="(s, q)"]
-    T7 [label=< T<SUB>7</SUB> >]
-    T7 -> Auth [label="(s, q)"]
+    Down -> T5 [label="(s, q)", dir=both]
+    T5 [label=< T<SUB>5</SUB>: (N, A, _, R, RG)<BR/>= dns(s, q, "SOA") >]
+    T5 -> Authority [label="{(s, q) | _ ∊ N ∪ A}\n∪ {(a, q) | a ∊ RG}"]
+    T5 -> Referral [label="{(n, q) | n ∊ R}"]
+    T5 -> Zone [label="{(s, q) | _ ∊ A}"]
 
-    Down_answer -> T5 [label="(s, q)"]
-    T5 [label=< T<SUB>5</SUB> >]
-    T5 -> Auth [label="(s, q)"]
-    T5 -> Zone [label="(s, q)"]
+    Referral -> T6 [label="(q, n)", dir=both]
+    T6 [label=< T<SUB>6</SUB>: p=parent(n) >]
+    T6 -> Domain [label="(n, p)"]
 
-    Down_glue -> T6 [label="(q, a)"]
-    T6 [label=< T<SUB>6</SUB> >]
-    T6 -> Auth [label="(a, q)"]
+    Referral -> T7 [label="(r, n)", dir=both]
+    Authority -> T7 [label="(s, q)", dir=both]
+    T7 [label=< T<SUB>7</SUB>: n=q >]
+    T7 -> Lookup [label="(s, q)"]
 
-    Down_ref -> T8 [label="(q, a)"]
-    T8 [label=< T<SUB>8</SUB> >]
-    T8 -> Oob [label="(a, q)"]
+    Lookup -> T8 [label="(s, q)", dir=both]
+    T8 [label=< T<SUB>8</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "A") >]
+    T8 -> Address [label="{(q, a) | a ∊ A}"]
 
-    Oob -> T9 [label="(_, n)", dir=both]
-    T9 [label=< T<SUB>9</SUB>: p=parent(n) >]
-    T9 -> Domain [label="(n, p)"]
+    Lookup -> T9 [label="(s, q)", dir=both]
+    T9 [label=< T<SUB>9</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "AAAA") >]
+    T9 -> Address [label="{(q, a) | a ∊ A}"]
 
-    Oob -> T10 [label="(_, n)", dir=both]
-    Auth -> T10 [label="(s, q)", dir=both]
-    T10 [label=< T<SUB>10</SUB>: n=q >]
-    T10 -> Lookup6_send [label="(s, q)"]
-    T10 -> Lookup4_send [label="(s, q)"]
+    Address -> T10 [label="(q, a)", dir=both]
+    Referral -> T10 [label="(d, n)", dir=both]
+    T10 [label=< T<SUB>10</SUB>: q=n >]
+    T10 -> Authority [label="(a, d)"]
 
-    Lookup4_answer -> T12 [label="(q, a)"]
-    T12 [label=< T<SUB>12</SUB> >]
-    T12 -> Addr [label="(q, a)"]
+    Authority -> T11 [label="(s, q)", dir=both]
+    T11 [label=< T<SUB>11</SUB>: (_, A, AG, _, _)<BR/>= dns(s, q, "NS") >]
+    T11 -> Referral [label="{(q, n) | n ∊ A}"]
+    T11 -> Authority [label="{(q, a) | a ∊ AG}"]
 
-    Lookup6_answer -> T11 [label="(q, a)"]
-    T11 [label=< T<SUB>11</SUB> >]
-    T11 -> Addr [label="(q, a)"]
-
-    Addr -> T13 [label="(q, a)", dir=both]
-    Oob -> T13 [label="(d, n)", dir=both]
-    T13 [label=< T<SUB>13</SUB>: q=n >]
-    T13 -> Auth [label="(a, d)"]
-
-    Auth -> T17 [label="(s, n)", dir=both]
-    T17 [label=< T<SUB>17</SUB> >]
-    T17 -> Self_send [label="(s, n)"]
-
-    Self_answer -> T18 [label="(s, q)"]
-    T18 [label=< T<SUB>18</SUB> >]
-    T18 -> Zone [label="(s, q)"]
-
-    Auth -> T14 [label="(s, n)", dir=both]
-    T14 [label=< T<SUB>14</SUB> >]
-    T14 -> Siblings_send [label="(s, n)"]
-
-    Siblings_glue -> T16 [label="(q, a)"]
-    T16 [label=< T<SUB>16</SUB> >]
-    T16 -> Auth [label="(q, a)"]
-
-    Siblings_ans -> T15 [label="(q, n)"]
-    T15 [label=< T<SUB>15</SUB> >]
-    T15 -> Oob [label="(q, n)"]
+    Authority -> T12 [label="(s, q)", dir=both]
+    T12 [label=< T<SUB>12</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "SOA") >]
+    T12 -> Zone [label="{(s, q) | _ ∊ A}"]
 } 
