@@ -1,5 +1,5 @@
 digraph Algorithm {
-    node [shape=Mrecord, style=filled, fillcolor=white]
+    node [layer=all, shape=Mrecord, style=filled, fillcolor=white]
     edge [dir=both]
 
     subgraph cluster_Inputs {
@@ -10,11 +10,18 @@ digraph Algorithm {
         Hint   [label="{Hint|ADDR\nserver}"]
     }
 
+    node [color=gray50, fontcolor=gray50]
+
+    SOA       [label="{SOA|ADDR ⨉ FQDN\nserver, qname}"]
+    A         [label="{A|ADDR ⨉ FQDN\nserver, qname}"]
+    AAAA      [label="{AAAA|ADDR ⨉ FQDN\nserver, qname}"]
+    NS        [label="{NS|ADDR ⨉ FQDN\nserver, qname}"]
+
+    node [color=black, fontcolor=black]
+
     Domain    [label="{Domain|FQDN ⨉ FQDN\nchild, parent}"]
     Authority [label="{Authority|ADDR ⨉ FQDN\nserver, name}"]
-    Down      [label="{Down|ADDR ⨉ FQDN\nserver, qname}"]
     Referral  [label="{Referral|FQDN ⨉ FQDN\nqname, nsdname}"]
-    Lookup    [label="{Lookup|ADDR ⨉ FQDN\nserver, qname}"]
     Address   [label="{Address|FQDN ⨉ ADDR\nqname, address}"]
     Zone      [label="{Zone|ADDR ⨉ FQDN\nserver, name}"]
 
@@ -32,13 +39,10 @@ digraph Algorithm {
     T3 [label=< T<SUB>3</SUB>: n="." >]
     T3 -> Authority [label="(s, n)", arrowtail=odot]
 
-    Domain -> T4 [label="(c, p)"]
-    Authority -> T4 [label="(s, n)"]
-    T4 [label=< T<SUB>4</SUB>: p=n >]
-    T4 -> Down [label="(s, c)", arrowtail=odot]
-
-    Down -> T5 [label="(s, q)"]
-    T5 [label=< T<SUB>5</SUB>: (N, A, _, R, RG)<BR/>= dns(s, q, "SOA") >]
+    Domain -> T5 [label="(q, p)"]
+    Authority -> T5 [label="(s, n)"]
+    T5 [label=< T<SUB>5</SUB>: n=p<BR/>(N, A, _, R, RG) =<BR/>dns(s, q, "SOA") >]
+    T5 -> SOA [label="(s, q)", arrowtail=odot, color=gray50]
     T5 -> Authority [label="{(s, q) | _ ∊ N ∪ A}\n∪ {(a, q) | a ∊ RG}", dir=forward]
     T5 -> Referral [label="{(n, q) | n ∊ R}", dir=forward]
     T5 -> Zone [label="{(s, q) | _ ∊ A}", dir=forward]
@@ -47,18 +51,17 @@ digraph Algorithm {
     T6 [label=< T<SUB>6</SUB>: p=parent(n) >]
     T6 -> Domain [label="(n, p)", arrowtail=odot]
 
-    Referral -> T7 [label="(r, n)"]
-    Authority -> T7 [label="(s, q)"]
-    T7 [label=< T<SUB>7</SUB>: n=q >]
-    T7 -> Lookup [label="(s, q)", arrowtail=odot]
-
-    Lookup -> T8 [label="(s, q)"]
-    T8 [label=< T<SUB>8</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "A") >]
-    T8 -> Address [label="{(q, a) | a ∊ A}", dir=forward]
-
-    Lookup -> T9 [label="(s, q)"]
-    T9 [label=< T<SUB>9</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "AAAA") >]
+    Referral -> T9 [label="(r, n)"]
+    Authority -> T9 [label="(s, q)"]
+    T9 [label=< T<SUB>9</SUB>: n=q<BR/>(_, A, _, _, _) =<BR/>dns(s, q, "AAAA") >]
+    T9 -> AAAA [label="(s, q)", arrowtail=odot, color=gray50]
     T9 -> Address [label="{(q, a) | a ∊ A}", dir=forward]
+
+    Referral:s -> T8 [label="(r, n)"]
+    Authority -> T8 [label="(s, q)"]
+    T8 [label=< T<SUB>8</SUB>: n=q<BR/>(_, A, _, _, _) =<BR/>dns(s, q, "A") >]
+    T8 -> A [label="(s, q)", arrowtail=odot, color=gray50]
+    T8 -> Address [label="{(q, a) | a ∊ A}", dir=forward]
 
     Address -> T10 [label="(q, a)"]
     Referral -> T10 [label="(d, n)"]
@@ -67,10 +70,12 @@ digraph Algorithm {
 
     Authority -> T11 [label="(s, q)"]
     T11 [label=< T<SUB>11</SUB>: (_, A, AG, _, _)<BR/>= dns(s, q, "NS") >]
+    T11 -> NS [label="(s, q)", arrowtail=odot, color=gray50]
     T11 -> Referral [label="{(q, n) | n ∊ A}", dir=forward]
     T11 -> Authority [label="{(q, a) | a ∊ AG}", dir=forward]
 
     Authority -> T12 [label="(s, q)"]
     T12 [label=< T<SUB>12</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "SOA") >]
+    T12 -> SOA [label="(s, q)", arrowtail=odot, color=gray50]
     T12 -> Zone [label="{(s, q) | _ ∊ A}", dir=forward]
 } 
