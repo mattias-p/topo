@@ -16,17 +16,13 @@ tweaks to its notation and semantics.
 
 ## Notation
 
-Nodes with rounded corners reprensent places.
-
-Nodes with sharp corners represent transitions.
-
 The background colors of the places and transitions in the diagram do not
 reflect the color set of the places.
 Instead they are meant to aid understanding the overall structure of the
 algorithm by separating its different functional parts.
 
-A double ended arcs is equivalent to one arc in one direction and one in the
-other, both with the same label.
+A double ended arcs is equivalent to one arc in each direction, both with the
+same label.
 
 When a variable referred to only once in a transition and its arcs, the name of
 the variable may be replaced with a placeholder underscore.
