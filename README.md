@@ -22,8 +22,8 @@ Nodes with sharp corners represent transitions.
 
 The background colors of the places and transitions in the diagram do not
 reflect the color set of the places.
-Instead they are meant to aid understanding the algorithm by separating its
-different functional parts.
+Instead they are meant to aid understanding the overall structure of the
+algorithm by separating its different functional parts.
 
 A double ended arcs is equivalent to one arc in one direction and one in the
 other, both with the same label.
