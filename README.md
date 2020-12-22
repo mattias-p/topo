@@ -12,99 +12,8 @@
 
 This algorithm is defined in terms of a [Coloured Petri net] (CPN) with a few
 tweaks to its notation and semantics.
-
-
-## Notation
-
-The background colors of the places and transitions in the diagram do not
-reflect the color set of the places.
-Instead they are meant to aid understanding the overall structure of the
-algorithm by separating its different functional parts.
-
-A double ended arcs is equivalent to one arc in each direction, both with the
-same label.
-
-When a variable referred to only once in a transition and its arcs, the name of
-the variable may be replaced with a placeholder underscore.
-
-
-## Semantics
-
-While the places in CPNs normally contain multisets of tokens, these places
-contain sets of tokens.
-
-All transitions are atomic, except the ones using the await() function.
-The await() function makes the transition wait for the given RESP to complete or
-time out before producing.
-Multiple tokens may be awaited simultaneously.
-
-Execution continues until no transitions are enabled firing.
-The marking at the time of termination is the output marking.
-
-No order is imposed on the order of the firing of transitions.
-The output marking is not supposed to be affected by the order of execution.
-If the output marking is indeed affected by the order of the firing of
-transitions, then either there is a bug in the algorithm or the server responses
-are affected by the order of the queries.
-
-The color set of a place is a tuple of elements for the following possible
-types:
- * ADDR - An IPv4 or IPv6 address
- * FQDN - A fully qualified domain name
- * RESP - A handle representing an outstanding DNS request
-
-
-## Functions
-
-The guard expression of a transition may use one of the following functions.
-
-### parent(FQDN)
-Returns a copy of `domain` with its least significant label removed.
-If `domain` contains no labels, an identical FQDN is returned.
-
-### dns(ADDR, FQDN, RRTYPE)
-The arguments it takes are: a server to send a DNS request to, a name and a
-record type to query the server about.
-It returns a RESP value.
-
-### await(RESP)
-It waits for the response to arrive or the request to time out, and then returns
-a tuple of five sets.
-
-If the request times out or if the response's RCODE is different from
-NOERROR, all five sets are returned empty.
-
-If the response's RCODE is NOERROR, the five sets are calculated in the
-following way:
- 1. The Nodata set.
-    If the response has the NODATA pseudo RCODE, a sentinel value is put
-    into this set.
-    Otherwise it's empty.
- 2. The Answer set.
-    If the response has the AA flag set, for each record in the response's
-    answer section that matches the query name and query type, the RDATA is
-    added to the Answer set.
-    The type of the elements depends on the query type.
- 3. The Answer glue set.
-    If the query type is NS, for each A and AAAA record in the additional
-    response section whose owner name matches an element in the Answer set,
-    the ADDRESS is added to the Answer glue set.
-    If the query type is different from NS, the Answer glue set is returned
-    empty.
- 4. The Referral set.
-    For each NS record in the response's authority section that matches the
-    query name argument, the NSDNAME is added to the Referral set.
- 5. The Referral glue set.
-    For each A and AAAA record in the additional response section whose
-    owner name matches an element in the Answer set, the ADDRESS is added to
-    the Referral glue set.
-
-The type of the elements in the Answer set depends on the query type like
-so:
- * SOA: empty tuples
- * NS: FQDNs
- * A: ADDRESS
- * AAAA: ADDRESS
+Details are discussed in appendices [A Notation][Appendix A], [B Semantics][
+Appendix B] and [C Functions][Appendix C].
 
 
 ## Inputs
@@ -187,6 +96,99 @@ correlate out-of-bailiwick referrals with name server addresses and adding them
 to Auth, which is all we needed to do.
 
 
+## Appendix A: Notation
+
+The background colors of the places and transitions in the diagram do not
+reflect the color set of the places.
+Instead they are meant to aid understanding the overall structure of the
+algorithm by separating its different functional parts.
+
+A double ended arcs is equivalent to one arc in each direction, both with the
+same label.
+
+When a variable referred to only once in a transition and its arcs, the name of
+the variable may be replaced with a placeholder underscore.
+
+
+## Appendix B: Semantics
+
+While the places in CPNs normally contain multisets of tokens, these places
+contain sets of tokens.
+
+All transitions are atomic, except the ones using the await() function.
+The await() function makes the transition wait for the given RESP to complete or
+time out before producing.
+Multiple tokens may be awaited simultaneously.
+
+Execution continues until no transitions are enabled firing.
+The marking at the time of termination is the output marking.
+
+No order is imposed on the order of the firing of transitions.
+The output marking is not supposed to be affected by the order of execution.
+If the output marking is indeed affected by the order of the firing of
+transitions, then either there is a bug in the algorithm or the server responses
+are affected by the order of the queries.
+
+The color set of a place is a tuple of elements for the following possible
+types:
+ * ADDR - An IPv4 or IPv6 address
+ * FQDN - A fully qualified domain name
+ * RESP - A handle representing an outstanding DNS request
+
+
+## Appendix C: Functions
+
+The guard expression of a transition may use one of the following functions.
+
+### parent(FQDN)
+Returns a copy of `domain` with its least significant label removed.
+If `domain` contains no labels, an identical FQDN is returned.
+
+### dns(ADDR, FQDN, RRTYPE)
+The arguments it takes are: a server to send a DNS request to, a name and a
+record type to query the server about.
+It returns a RESP value.
+
+### await(RESP)
+It waits for the response to arrive or the request to time out, and then returns
+a tuple of five sets.
+
+If the request times out or if the response's RCODE is different from
+NOERROR, all five sets are returned empty.
+
+If the response's RCODE is NOERROR, the five sets are calculated in the
+following way:
+ 1. The Nodata set.
+    If the response has the NODATA pseudo RCODE, a sentinel value is put
+    into this set.
+    Otherwise it's empty.
+ 2. The Answer set.
+    If the response has the AA flag set, for each record in the response's
+    answer section that matches the query name and query type, the RDATA is
+    added to the Answer set.
+    The type of the elements depends on the query type.
+ 3. The Answer glue set.
+    If the query type is NS, for each A and AAAA record in the additional
+    response section whose owner name matches an element in the Answer set,
+    the ADDRESS is added to the Answer glue set.
+    If the query type is different from NS, the Answer glue set is returned
+    empty.
+ 4. The Referral set.
+    For each NS record in the response's authority section that matches the
+    query name argument, the NSDNAME is added to the Referral set.
+ 5. The Referral glue set.
+    For each A and AAAA record in the additional response section whose
+    owner name matches an element in the Answer set, the ADDRESS is added to
+    the Referral glue set.
+
+The type of the elements in the Answer set depends on the query type like
+so:
+ * SOA: empty tuples
+ * NS: FQDNs
+ * A: ADDRESS
+ * AAAA: ADDRESS
+
+
 ## Discussion
 
 * Auth is not "complete" when NXDOMAIN is returned for a domain in the middle of
@@ -194,4 +196,8 @@ to Auth, which is all we needed to do.
 * Oob is defined in relation to the apex, but this algorithm works as if the
   apex of a domain is always the domain itself.
 
+
+[Appendix A]: #appendix-a-notation
+[Appendix B]: #appendix-b-semantics
+[Appendix C]: #appendix-c-functions
 [Coloured Petri net]: https://en.wikipedia.org/wiki/Coloured_Petri_net
