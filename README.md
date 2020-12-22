@@ -38,21 +38,20 @@ The await() function makes the transition wait for the given RESP to complete or
 time out before producing.
 Multiple tokens may be awaited simultaneously.
 
+Execution continues until no transitions are enabled firing.
+The marking at the time of termination is the output marking.
+
+No order is imposed on the order of the firing of transitions.
+The output marking is not supposed to be affected by the order of execution.
+If the output marking is indeed affected by the order of the firing of
+transitions, then either there is a bug in the algorithm or the server responses
+are affected by the order of the queries.
+
 The color set of a place is a tuple of elements for the following possible
 types:
  * ADDR - An IPv4 or IPv6 address
  * FQDN - A fully qualified domain name
  * RESP - A handle representing an outstanding DNS request
-
-Execution continues with enabled transitions firing in any order until no
-transitions are enabled firing.
-The marking at the time of termination is the output marking.
-
-Assuming that all of the servers being queried give the same response for the
-same query (modulo TTLs and SOA SERIALs) for the duration of the execution of
-the CPN, the output marking is a function of the input marking and the starting
-time of the execution. 
-The output marking is not supposed to be affected by the order of execution.
 
 
 ## Functions
