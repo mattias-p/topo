@@ -8,92 +8,124 @@
   care of, as well as the interface between collection and analysis.
 
 
-## Notation
+## Description
 
 This algorithm is defined in terms of a [Coloured Petri net] (CPN) with a few
-modifications to its rules.
-
-1. When a variable is used in a single arc and never referred to, its name is
-   replaced with a placeholder underscore.
-
-2. The guard expression of a transition may use a function named parent().
-   The parent(FQDN: domain) → FQDN` function returns a copy of `domain` with
-   its least significant label removed. If `domain` contains no labels, an
-   identical FQDN is returned.
-
-3. The guard expression of a transition may use a function named dns().
-   It takes three arguments: a server to send a DNS request to, a name and a
-   record type to query the server about.
-   It returns a tuple of five sets.
-   If the request times out or if the response's RCODE is different from
-   NOERROR, all five sets are returned empty.
-   If the response's RCODE is NOERROR, the five sets are calculated in the
-   following way:
-    1. The Nodata set.
-       If the response has the NODATA pseudo RCODE, a sentinel value is put into
-       this set. Otherwise it's empty.
-    2. The Answer set.
-       If the response has the AA flag set, for each record in the response's
-       answer section that matches the query name and query type, the RDATA is
-       added to the Answer set.
-       The type of the elements depends on the query type.
-    3. The Answer glue set.
-       If the query type is NS, for each A and AAAA record in the additional
-       response section whose owner name matches an element in the Answer set,
-       the ADDRESS is added to the Answer glue set.
-       If the query type is different from NS, the Answer glue set is returned
-       empty.
-    4. The Referral set.
-       For each NS record in the response's authority section that matches the
-       query name argument, the NSDNAME is added to the Referral set.
-    5. The Referral glue set.
-       For each A and AAAA record in the additional response section whose owner
-       name matches an element in the Answer set, the ADDRESS is added to the
-       Referral glue set.
-
-   The type of the elements in the Answer set depends on the query type like so:
-    * SOA: empty tuples
-    * NS: FQDNs
-    * A: ADDRESS
-    * AAAA: ADDRESS
-
-4. Unlike in regular CPNs where places contain multisets of tokens, these places
-   contain sets of tokens.
-
-5. Transactions are atomic unless they use the dns() function.
-   Transactions using the dns() functions execute in two distinct phases with
-   delay in between.
-   Their arcs are partitioned into two sets - the arcs that are independent of
-   the result of the dns() function, and those that depend on it.
-   Each set is atomic in itself, but other transitions may fire between them.
-   During this the time the transition is said to be ongoing.
-   Multiple executions of the same transition may be ongoing in parallel with
-   no restrictions on order.
-
-6. Execution continues with enabled transitions firing in any order until all
-   transitions are disabled and no transitions are ongoing.
-   The marking at the time of termination is the output marking.
-
-7. Assuming that all of the servers being queried give the same response for the
-   same query (modulo TTLs and SOA SERIALs) for the duration of the execution of
-   the CPN, the output marking is a function of the input marking and the
-   starting time of the execution. 
-   The output marking is not supposed to be affected by the order of execution.
+tweaks to its notation and semantics.
 
 
-#### Inputs
+## Notation
+
+Nodes with rounded corners reprensent places.
+
+Nodes with sharp corners represent transitions.
+
+The background colors of the places and transitions in the diagram do not
+reflect the color set of the places.
+Instead they are meant to aid understanding the algorithm by separating its
+different functional parts.
+
+A double ended arcs is equivalent to one arc in one direction and one in the
+other, both with the same label.
+
+When a variable used in an arc related to a transition, and this variable is
+neither referenced in the transition itself nor any of its other arcs, the name
+of the variable may be replaced with a placeholder underscore.
+
+
+## Semantics
+
+While the places in CPNs normally contain multisets of tokens, these places
+contain sets of tokens.
+
+All transitions are atomic, except the ones using the await() function.
+The await() function makes the transition wait for the given RESP to complete or
+time out before producing.
+Multiple tokens may be awaited simultaneously.
+
+The color set of a place is a tuple of elements for the following possible
+types:
+ * ADDR - An IPv4 or IPv6 address
+ * FQDN - A fully qualified domain name
+ * RESP - A handle representing an outstanding DNS request
+
+Execution continues with enabled transitions firing in any order until no
+transitions are enabled firing.
+The marking at the time of termination is the output marking.
+
+Assuming that all of the servers being queried give the same response for the
+same query (modulo TTLs and SOA SERIALs) for the duration of the execution of
+the CPN, the output marking is a function of the input marking and the starting
+time of the execution. 
+The output marking is not supposed to be affected by the order of execution.
+
+
+## Functions
+
+The guard expression of a transition may use one of the following functions.
+
+### parent(FQDN)
+Returns a copy of `domain` with its least significant label removed.
+If `domain` contains no labels, an identical FQDN is returned.
+
+### dns(ADDR, FQDN, RRTYPE)
+The arguments it takes are: a server to send a DNS request to, a name and a
+record type to query the server about.
+It returns a RESP value.
+
+### await(RESP)
+It waits for the response to arrive or the request to time out, and then returns
+a tuple of five sets.
+
+If the request times out or if the response's RCODE is different from
+NOERROR, all five sets are returned empty.
+
+If the response's RCODE is NOERROR, the five sets are calculated in the
+following way:
+ 1. The Nodata set.
+    If the response has the NODATA pseudo RCODE, a sentinel value is put
+    into this set.
+    Otherwise it's empty.
+ 2. The Answer set.
+    If the response has the AA flag set, for each record in the response's
+    answer section that matches the query name and query type, the RDATA is
+    added to the Answer set.
+    The type of the elements depends on the query type.
+ 3. The Answer glue set.
+    If the query type is NS, for each A and AAAA record in the additional
+    response section whose owner name matches an element in the Answer set,
+    the ADDRESS is added to the Answer glue set.
+    If the query type is different from NS, the Answer glue set is returned
+    empty.
+ 4. The Referral set.
+    For each NS record in the response's authority section that matches the
+    query name argument, the NSDNAME is added to the Referral set.
+ 5. The Referral glue set.
+    For each A and AAAA record in the additional response section whose
+    owner name matches an element in the Answer set, the ADDRESS is added to
+    the Referral glue set.
+
+The type of the elements in the Answer set depends on the query type like
+so:
+ * SOA: empty tuples
+ * NS: FQDNs
+ * A: ADDRESS
+ * AAAA: ADDRESS
+
+
+## Inputs
 * A set of root hints.
 * A domain name.
 
 
-#### Outputs
+## Outputs
 * A set of chains of zone authorities. The chains of zone authorities for the
   given domain and for each encountered out-of-bailiwick name server.
 * A set of (domain name, IP address) pairs. The domain name and address of each
   encountered out-of-bailiwick name server.
 
 
-#### Procedure
+## Procedure
 
 ![diagram](topo.png)
 
@@ -160,7 +192,8 @@ Once addresses start showing up in Addr, t<sub>12</sub> will start waking up to
 correlate out-of-bailiwick referrals with name server addresses and adding them
 to Auth, which is all we needed to do.
 
-#### Discussion
+
+## Discussion
 
 * Auth is not "complete" when NXDOMAIN is returned for a domain in the middle of
   Domain.
@@ -168,4 +201,3 @@ to Auth, which is all we needed to do.
   apex of a domain is always the domain itself.
 
 [Coloured Petri net]: https://en.wikipedia.org/wiki/Coloured_Petri_net
-[Prioritised Petri net]: https://en.wikipedia.org/wiki/Prioritised_Petri_net
