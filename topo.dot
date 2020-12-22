@@ -46,83 +46,83 @@ digraph Algorithm {
 
     node [fillcolor="#ffffff"] // white
 
-    Target -> T0 [label="n"]
-    T0 [label=< {T<SUB>0</SUB>|p=parent(n)} >]
-    T0 -> Domain [label="(n, p)", arrowtail=odot]
+    Target -> t0 [label="n"]
+    t0 [label=< {t<SUB>0</SUB>|p=parent(n)} >]
+    t0 -> Domain [label="(n, p)", arrowtail=odot]
 
-    Hint -> T1 [label="s"]
-    T1 [label=< {T<SUB>1</SUB>|n="."} >]
-    T1 -> Authority [label="(s, n)", arrowtail=odot]
+    Hint -> t1 [label="s"]
+    t1 [label=< {t<SUB>1</SUB>|n="."} >]
+    t1 -> Authority [label="(s, n)", arrowtail=odot]
 
     node [fillcolor="#ffb3ba"] // red
 
-    Domain -> T2 [label="(_, n)"]
-    T2 [label=< {T<SUB>2</SUB>|p=parent(n)} >]
-    T2 -> Domain [label="(n, p)", arrowtail=odot]
+    Domain -> t2 [label="(_, n)"]
+    t2 [label=< {t<SUB>2</SUB>|p=parent(n)} >]
+    t2 -> Domain [label="(n, p)", arrowtail=odot]
 
     node [fillcolor="#ffdfba"] // orange
 
-    Domain -> T3 [label="(n, p)"]
-    Authority -> T3 [label="(s, m)"]
-    T3 [label=< {T<SUB>3</SUB>| m=p<BR/>r = dns(s, n, "SOA")} >]
-    T3 -> SOA [label="(s, n)", arrowtail=odot]
-    T3 -> P4 [label="(r, s, n)", dir=forward]
+    Domain -> t3 [label="(n, p)"]
+    Authority -> t3 [label="(s, m)"]
+    t3 [label=< {t<SUB>3</SUB>| m=p<BR/>r = dns(s, n, "SOA")} >]
+    t3 -> SOA [label="(s, n)", arrowtail=odot]
+    t3 -> P4 [label="(r, s, n)", dir=forward]
 
-    P4 -> T4 [label="(r, s, n)", dir=forward]
-    T4 [label=< {T<SUB>4</SUB>|(N, A, _, R, RG) = await(r)} >]
-    T4 -> Authority [label="{(s, n) | _ ∊ N ∪ A}\n∪ {(a, n) | a ∊ RG}", dir=forward]
-    T4 -> Referral [label="{(m, n) | m ∊ R}", dir=forward]
-    T4 -> Zone [label="{(s, n) | _ ∊ A}", dir=forward]
+    P4 -> t4 [label="(r, s, n)", dir=forward]
+    t4 [label=< {t<SUB>4</SUB>|(N, A, _, R, RG) = await(r)} >]
+    t4 -> Authority [label="{(s, n) | _ ∊ N ∪ A}\n∪ {(a, n) | a ∊ RG}", dir=forward]
+    t4 -> Referral [label="{(m, n) | m ∊ R}", dir=forward]
+    t4 -> Zone [label="{(s, n) | _ ∊ A}", dir=forward]
 
     node [fillcolor="#ffffba"] // yellow
 
-    Authority -> T5 [label="(s, n)"]
-    T5 [label=< {T<SUB>5</SUB>|r = dns(s, n, "SOA")} >]
-    T5 -> SOA [label="(s, n)", arrowtail=odot]
-    T5 -> P6 [label="(r, s, n)", dir=forward]
+    Authority -> t5 [label="(s, n)"]
+    t5 [label=< {t<SUB>5</SUB>|r = dns(s, n, "SOA")} >]
+    t5 -> SOA [label="(s, n)", arrowtail=odot]
+    t5 -> P6 [label="(r, s, n)", dir=forward]
 
-    P6 -> T6 [label="(r, s, n)", dir=forward]
-    T6 [label=< {T<SUB>6</SUB>|(_, A, _, _, _) = await(r)} >]
-    T6 -> Zone [label="{(s, n) | _ ∊ A}", dir=forward]
+    P6 -> t6 [label="(r, s, n)", dir=forward]
+    t6 [label=< {t<SUB>6</SUB>|(_, A, _, _, _) = await(r)} >]
+    t6 -> Zone [label="{(s, n) | _ ∊ A}", dir=forward]
 
     node [fillcolor="#baffc9"] // green
 
-    Authority -> T7 [label="(s, n)"]
-    T7 [label=< {T<SUB>7</SUB>|r = dns(s, n, "NS")} >]
-    T7 -> NS [label="(s, n)", arrowtail=odot]
-    T7 -> P9 [label="(r, n)", dir=forward]
+    Authority -> t7 [label="(s, n)"]
+    t7 [label=< {t<SUB>7</SUB>|r = dns(s, n, "NS")} >]
+    t7 -> NS [label="(s, n)", arrowtail=odot]
+    t7 -> P9 [label="(r, n)", dir=forward]
 
-    P9 -> T8 [label="(r, n)", dir=forward]
-    T8 [label=< {T<SUB>8</SUB>|(_, A, AG, _, _) = await(r)} >]
-    T8 -> Referral [label="{(n, m) | m ∊ A}", dir=forward]
-    T8 -> Authority [label="{(n, a) | a ∊ AG}", dir=forward]
+    P9 -> t8 [label="(r, n)", dir=forward]
+    t8 [label=< {t<SUB>8</SUB>|(_, A, AG, _, _) = await(r)} >]
+    t8 -> Referral [label="{(n, m) | m ∊ A}", dir=forward]
+    t8 -> Authority [label="{(n, a) | a ∊ AG}", dir=forward]
 
     node [fillcolor="#bae1ff"] // blue
 
-    Referral -> T9 [label="(_, n)"]
-    T9 [label=< {T<SUB>9</SUB>|p=parent(n)} >]
-    T9 -> Domain [label="(n, p)", arrowtail=odot]
+    Referral -> t9 [label="(_, n)"]
+    t9 [label=< {t<SUB>9</SUB>|p=parent(n)} >]
+    t9 -> Domain [label="(n, p)", arrowtail=odot]
 
     node [fillcolor="#ddd9dd"] // purple
 
-    Referral:s -> T10 [label="(_, m)"]
-    Authority -> T10 [label="(s, n)"]
-    T10 [label=< {T<SUB>10</SUB>|m=n<BR/>r = dns(s, n, "A")} >]
-    T10 -> A [label="(s, n)", arrowtail=odot]
-    T10 -> P13 [label="(r, n)", dir=forward]
+    Referral:s -> t10 [label="(_, m)"]
+    Authority -> t10 [label="(s, n)"]
+    t10 [label=< {t<SUB>10</SUB>|m=n<BR/>r = dns(s, n, "A")} >]
+    t10 -> A [label="(s, n)", arrowtail=odot]
+    t10 -> P13 [label="(r, n)", dir=forward]
 
-    Referral:s -> T11 [label="(_, m)"]
-    Authority -> T11 [label="(s, n)"]
-    T11 [label=< {T<SUB>11</SUB>|m=n<BR/>r = dns(s, n, "AAAA")} >]
-    T11 -> AAAA [label="(s, n)", arrowtail=odot]
-    T11 -> P13 [label="(r, n)", dir=forward]
+    Referral:s -> t11 [label="(_, m)"]
+    Authority -> t11 [label="(s, n)"]
+    t11 [label=< {t<SUB>11</SUB>|m=n<BR/>r = dns(s, n, "AAAA")} >]
+    t11 -> AAAA [label="(s, n)", arrowtail=odot]
+    t11 -> P13 [label="(r, n)", dir=forward]
 
-    P13 -> T12 [label="(r, n)", dir=forward]
-    T12 [label=< {T<SUB>12</SUB>|(_, A, _, _, _) = await(r)} >]
-    T12 -> Address [label="{(n, a) | a ∊ A}", dir=forward]
+    P13 -> t12 [label="(r, n)", dir=forward]
+    t12 [label=< {t<SUB>12</SUB>|(_, A, _, _, _) = await(r)} >]
+    t12 -> Address [label="{(n, a) | a ∊ A}", dir=forward]
 
-    Address -> T13 [label="(n, a)"]
-    Referral -> T13 [label="(p, m)"]
-    T13 [label=< {T<SUB>13</SUB>|m=n} >]
-    T13 -> Authority [label="(a, p)", arrowtail=odot]
+    Address -> t13 [label="(n, a)"]
+    Referral -> t13 [label="(p, m)"]
+    t13 [label=< {t<SUB>13</SUB>|m=n} >]
+    t13 -> Authority [label="(a, p)", arrowtail=odot]
 }
