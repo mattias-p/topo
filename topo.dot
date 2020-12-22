@@ -1,6 +1,10 @@
 digraph Algorithm {
-    node [layer=all, shape=Mrecord, style=filled, fillcolor=white]
+    node [style=filled]
     edge [dir=both]
+
+    node [shape=Mrecord]
+
+    node [fillcolor="#ffffff"]
 
     subgraph cluster_Inputs {
         label="Inputs"
@@ -10,67 +14,110 @@ digraph Algorithm {
         Hint   [label=< {P<SUB>1</SUB>: Hint|ADDR<BR/>server} >]
     }
 
-    Domain    [label=< {P<SUB>2</SUB>: Domain|FQDN ⨉ FQDN<BR/>child, parent} >, fillcolor="#ffb3ba"]
-    Authority [label=< {P<SUB>3</SUB>: Authority|ADDR ⨉ FQDN<BR/>server, name} >, fillcolor="#ffdfba"]
-    Referral  [label=< {P<SUB>4</SUB>: Referral|FQDN ⨉ FQDN<BR/>qname, nsdname} >, fillcolor="#ffdfba"]
-    SOA       [label=< {P<SUB>5</SUB>: SOA|ADDR ⨉ FQDN<BR/>server, qname} >, fillcolor="#ffdfba"]
-    NS        [label=< {P<SUB>6</SUB>: NS|ADDR ⨉ FQDN<BR/>server, qname} >, fillcolor="#ffffba"]
-    A         [label=< {P<SUB>7</SUB>: A|ADDR ⨉ FQDN<BR/>server, qname} >, fillcolor="#baffc9"]
-    Address   [label=< {P<SUB>8</SUB>: Address|FQDN ⨉ ADDR<BR/>qname, address} >, fillcolor="#baffc9"]
-    AAAA      [label=< {P<SUB>9</SUB>: AAAA|ADDR ⨉ FQDN<BR/>server, qname} >, fillcolor="#baffc9"]
-    Zone      [label=< {P<SUB>10</SUB>: Zone|ADDR ⨉ FQDN<BR/>server, name} >, fillcolor="#bae1ff"]
+    node      [fillcolor="#ffb3ba"]
+    Domain    [label=< {P<SUB>2</SUB>: Domain|FQDN ⨉ FQDN<BR/>child, parent} >]
+
+    node      [fillcolor="#ffdfba"]
+    SOA       [label=< {P<SUB>3</SUB>: SOA|ADDR ⨉ FQDN<BR/>server, qname} >]
+    P4        [label=< {P<SUB>4</SUB>|RESP ⨉ ADDR ⨉ FQDN} >]
+    Authority [label=< {P<SUB>5</SUB>: Authority|ADDR ⨉ FQDN<BR/>server, name} >]
+
+    node      [fillcolor="#bae1ff"]
+    P13       [label=< {P<SUB>13</SUB>|RESP ⨉ ADDR ⨉ FQDN} >]
+    Zone      [label=< {P<SUB>14</SUB>: Zone|ADDR ⨉ FQDN<BR/>server, name} >]
+
+    node      [fillcolor="#ffffba"]
+    P12       [label=< {P<SUB>12</SUB>|RESP ⨉ FQDN} >]
+    NS        [label=< {P<SUB>11</SUB>: NS|ADDR ⨉ FQDN<BR/>server, qname} >]
+    Referral  [label=< {P<SUB>6</SUB>: Referral|FQDN ⨉ FQDN<BR/>qname, nsdname} >]
+
+    node      [fillcolor="#baffc9"]
+    A         [label=< {P<SUB>7</SUB>: A|ADDR ⨉ FQDN<BR/>server, qname} >]
+    AAAA      [label=< {P<SUB>8</SUB>: AAAA|ADDR ⨉ FQDN<BR/>server, qname} >]
+    P9        [label=< {P<SUB>9</SUB>|RESP ⨉ FQDN} >]
+    Address   [label=< {P<SUB>10</SUB>: Address|FQDN ⨉ ADDR<BR/>qname, address} >]
+
 
     node [shape=record]
 
+    node [fillcolor="#ffffff"]
+
     Target -> T0 [label="d"]
-    T0 [label=< T<SUB>0</SUB>: p=parent(d) >]
+    T0 [label=< {T<SUB>0</SUB>|p=parent(d)} >]
     T0 -> Domain [label="(d, p)", arrowtail=odot]
 
     Hint -> T1 [label="s"]
-    T1 [label=< T<SUB>1</SUB>: n="." >]
+    T1 [label=< {T<SUB>1</SUB>|n="."} >]
     T1 -> Authority [label="(s, n)", arrowtail=odot]
 
+    node [fillcolor="#ffb3ba"]
+
     Domain -> T2 [label="(_, c)"]
-    T2 [label=< T<SUB>2</SUB>: p=parent(c) >, fillcolor="#ffb3ba"]
+    T2 [label=< {T<SUB>2</SUB>|p=parent(c)} >]
     T2 -> Domain [label="(c, p)", arrowtail=odot]
+
+    node [fillcolor="#ffdfba"]
 
     Domain -> T3 [label="(q, p)"]
     Authority -> T3 [label="(s, n)"]
-    T3 [label=< T<SUB>3</SUB>: n=p;<BR/>(N, A, _, R, RG) =<BR/>dns(s, q, "SOA") >, fillcolor="#ffdfba"]
+    T3 [label=< {T<SUB>3</SUB>| n=p<BR/>r = dns(s, q, "SOA")} >]
     T3 -> SOA [label="(s, q)", arrowtail=odot]
-    T3 -> Authority [label="{(s, q) | _ ∊ N ∪ A}\n∪ {(a, q) | a ∊ RG}", dir=forward]
-    T3 -> Referral [label="{(n, q) | n ∊ R}", dir=forward]
-    T3 -> Zone [label="{(s, q) | _ ∊ A}", dir=forward]
+    T3 -> P4 [label="(r, s, q)", dir=forward]
 
-    Referral -> T4 [label="(_, n)"]
-    T4 [label=< T<SUB>4</SUB>: p=parent(n) >, fillcolor="#ffdfba"]
-    T4 -> Domain [label="(n, p)", arrowtail=odot]
+    P4 -> T4 [label="(r, s, q)", dir=forward]
+    T4 [label=< {T<SUB>4</SUB>|(N, A, _, R, RG) = await(r)} >]
+    T4 -> Authority [label="{(s, q) | _ ∊ N ∪ A}\n∪ {(a, q) | a ∊ RG}", dir=forward]
+    T4 -> Referral [label="{(n, q) | n ∊ R}", dir=forward]
+    T4 -> Zone [label="{(s, q) | _ ∊ A}", dir=forward]
 
-    Authority -> T5 [label="(s, q)"]
-    T5 [label=< T<SUB>5</SUB>: (_, A, AG, _, _)<BR/>= dns(s, q, "NS") >, fillcolor="#ffffba"]
-    T5 -> NS [label="(s, q)", arrowtail=odot]
-    T5 -> Referral [label="{(q, n) | n ∊ A}", dir=forward]
-    T5 -> Authority [label="{(q, a) | a ∊ AG}", dir=forward]
+    node [fillcolor="#bae1ff"]
 
-    Referral -> T7 [label="(_, n)"]
-    Authority -> T7 [label="(s, q)"]
-    T7 [label=< T<SUB>7</SUB>: n=q;<BR/>(_, A, _, _, _) =<BR/>dns(s, q, "AAAA") >, fillcolor="#baffc9"]
-    T7 -> AAAA [label="(s, q)", arrowtail=odot]
-    T7 -> Address [label="{(q, a) | a ∊ A}", dir=forward]
+    Authority -> T12 [label="(s, q)"]
+    T12 [label=< {T<SUB>12</SUB>|r = dns(s, q, "SOA")} >]
+    T12 -> SOA [label="(s, q)", arrowtail=odot]
+    T12 -> P13 [label="(r, s, q)", dir=forward]
+
+    P13 -> T13 [label="(r, s, q)", dir=forward]
+    T13 [label=< {T<SUB>13</SUB>|(_, A, _, _, _) = await(r)} >]
+    T13 -> Zone [label="{(s, q) | _ ∊ A}", dir=forward]
+
+    node [fillcolor="#ffffba"]
+
+    Authority -> T10 [label="(s, q)"]
+    T10 [label=< {T<SUB>10</SUB>|r = dns(s, q, "NS")} >]
+    T10 -> NS [label="(s, q)", arrowtail=odot]
+    T10 -> P12 [label="(r, q)", dir=forward]
+
+    P12 -> T11 [label="(r, q)", dir=forward]
+    T11 [label=< {T<SUB>11</SUB>|(_, A, AG, _, _) = await(r)} >]
+    T11 -> Referral [label="{(q, n) | n ∊ A}", dir=forward]
+    T11 -> Authority [label="{(q, a) | a ∊ AG}", dir=forward]
+
+    Referral -> T5 [label="(_, n)"]
+    T5 [label=< {T<SUB>5</SUB>|p=parent(n)} >]
+    T5 -> Domain [label="(n, p)", arrowtail=odot]
+
+    node [fillcolor="#baffc9"]
 
     Referral:s -> T6 [label="(_, n)"]
     Authority -> T6 [label="(s, q)"]
-    T6 [label=< T<SUB>6</SUB>: n=q;<BR/>(_, A, _, _, _) =<BR/>dns(s, q, "A") >, fillcolor="#baffc9"]
+    T6 [label=< {T<SUB>6</SUB>|n=q<BR/>r = dns(s, q, "A")} >]
     T6 -> A [label="(s, q)", arrowtail=odot]
-    T6 -> Address [label="{(q, a) | a ∊ A}", dir=forward]
+    T6 -> P9 [label="(r, q)", dir=forward]
 
-    Address -> T8 [label="(q, a)"]
-    Referral -> T8 [label="(d, n)"]
-    T8 [label=< T<SUB>8</SUB>: q=n >, fillcolor="#baffc9"]
-    T8 -> Authority [label="(a, d)", arrowtail=odot]
+    Referral:s -> T7 [label="(_, n)"]
+    Authority -> T7 [label="(s, q)"]
+    T7 [label=< {T<SUB>7</SUB>|n=q<BR/>r = dns(s, q, "AAAA")} >]
+    T7 -> AAAA [label="(s, q)", arrowtail=odot]
+    T7 -> P9 [label="(r, q)", dir=forward]
 
-    Authority -> T9 [label="(s, q)"]
-    T9 [label=< T<SUB>9</SUB>: (_, A, _, _, _)<BR/>= dns(s, q, "SOA") >, fillcolor="#bae1ff"]
-    T9 -> SOA [label="(s, q)", arrowtail=odot]
-    T9 -> Zone [label="{(s, q) | _ ∊ A}", dir=forward]
-} 
+    P9 -> T8 [label="(r, q)", dir=forward]
+    T8 [label=< {T<SUB>8</SUB>|(_, A, _, _, _) = await(r)} >]
+    T8 -> Address [label="{(q, a) | a ∊ A}", dir=forward]
+
+    Address -> T9 [label="(q, a)"]
+    Referral -> T9 [label="(d, n)"]
+    T9 [label=< {T<SUB>9</SUB>|q=n} >]
+    T9 -> Authority [label="(a, d)", arrowtail=odot]
+
+}
