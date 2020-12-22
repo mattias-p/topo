@@ -28,9 +28,8 @@ different functional parts.
 A double ended arcs is equivalent to one arc in one direction and one in the
 other, both with the same label.
 
-When a variable used in an arc related to a transition, and this variable is
-neither referenced in the transition itself nor any of its other arcs, the name
-of the variable may be replaced with a placeholder underscore.
+When a variable referred to only once in a transition and its arcs, the name of
+the variable may be replaced with a placeholder underscore.
 
 
 ## Semantics
